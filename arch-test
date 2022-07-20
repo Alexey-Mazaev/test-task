@@ -1,0 +1,65 @@
+class Note(
+    var id: String,
+    var title: String,
+    var description: String,
+    var changeDate: Date,
+)
+
+interface NetworkSource {
+    fun addNote(title: String?, description: String?): Completable
+
+    fun loadNotes(): Observable<List<Note>>
+
+    fun removeNote(note: Note): Completable
+}
+
+data class NetworkSourceImpl(val url: String): NetworkSource {
+    /* some implementation for interface methods */
+}
+
+
+class NotesRepository(
+    var networkSource: NetworkSource,
+) {
+    fun addNote(title: String?, description: String?) = networkSource.addNote(title!!, description!!)
+
+    fun removeNote(note: Note) = networkSource.removeNote(note)
+
+    fun loadNotes() = networkSource.loadNotes()
+}
+
+// ViewModel for feed screen
+class NotesFeedViewModel(): ViewModel() {
+    private lateinit var notesRepository : NotesRepository
+
+    init {
+        notesRepository = NotesRepository(
+            networkSource = NetworkSourceRepository("http://notesapp.com")
+        )
+    }
+
+    fun deleteNote(note: Note) {
+        notesRepository.deleteNote(note)
+    }
+
+    fun loadNotes() {
+        notesRepository
+            .loadNotes()
+            .observeOn(Schedulers.IO())
+            .subscribe()
+    }
+}
+
+// Presenter for new note screen
+public class NewNotePresenter {
+
+    public NotesRepository notesRepository;
+
+    public NewNotePresenter() {
+        this.notesRepository = NotesRepository(new NetworkSourceImpl("http://notesapp.com"));
+    }
+
+    void addNewNote(String title, String description) {
+        notesRepository.addNewNote(title, description).subscribe()    
+    }
+}
